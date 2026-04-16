@@ -1,3 +1,3 @@
-# bash-functions-common
+# bash-common
 
 Sane defaults and common utility functions for all bash applications.
