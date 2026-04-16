@@ -76,15 +76,15 @@ print(){
         case "$_print" in
             notify)
                 notify-send -u critical -i dialog-warning "$__exec" \
-                    "$(echo "$_message" | head -c 1000 | fmt -suw 70)"
+                    "$(echo "$_message" | dd status=none bs=1 count=1000 | fmt -suw 70)"
             ;;
             push)
                 alias.push.sh warning "$(uname -n): $__exec" \
-                    "$(echo "$_message" | head -c 1500)"
+                    "$(echo "$_message" | dd status=none bs=1 count=1500)"
             ;;
             email)
-                echo "$_message" | head -c 100000 |
-                    mail -s "$(uname -n): $__exec" "$(</var/local/.mail)"
+                echo "$_message" | dd status=none bs=1 count=100000 |
+                    mail -s "$(uname -n): $__exec" "$(tr -d '\n' </var/local/.mail)"
             ;;
         esac >"$__shm/$__mine.$$.dump" 2>&1 ||
             __dump_error "$_print" "$?" "$_message"
@@ -134,6 +134,7 @@ command_not_found_handle(){
     else
         print "Command \"$1\" is missing."
     fi
+    >"$__shm/$$.handled_127"
     return 127
 }
 
@@ -154,8 +155,13 @@ trace_exit(){
         return 0
     fi
 
+    # command_not_found_handle() runs only for commands available in $PATH
+    if [[ -e "$__shm/$$.handled_127" ]]; then
+        return 0
+    fi
+
     case "${_error[3]}" in
-        0|127|130|143)
+        0|130|143)
         ;;
         *)
             print <<-EOF
@@ -180,7 +186,7 @@ trap_exit(){
         set +o errexit +o nounset
             $__exit
         set +o noglob
-            rm -f '$__shm/$$'.*
+            rm -f '${__shm:?}/$$'.*
     }" EXIT
 }
 
