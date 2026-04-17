@@ -127,9 +127,9 @@ def shell(*args, **kwargs):
     if (user := kwargs.get("user")) and user != "root":
         uid = pwd.getpwnam(user).pw_uid
         user_env = os.environ.copy()
-        user_env['XDG_RUNTIME_DIR'] = f'/run/user/{uid}'
-        user_env['DBUS_SESSION_BUS_ADDRESS'] = f'unix:path=/run/user/{uid}/bus'
-        kwargs['env'] = user_env
+        user_env["XDG_RUNTIME_DIR"] = f"/run/user/{uid}"
+        user_env["DBUS_SESSION_BUS_ADDRESS"] = f"unix:path=/run/user/{uid}/bus"
+        kwargs["env"] = user_env
 
     if not Args.dry_run:
         cmd.tty(*args, **kwargs)
@@ -145,6 +145,12 @@ def main():
 
     tmpdir = cmd.run(["mktemp", "-d", "./.tmp.XXXXXXXXXX"]).stdout
     atexit.register(cleanup_tmpdir)
+
+    etcdir = os.path.join(Args.directory, "etc")
+
+    if os.path.exists(etcdir):
+        shell(["mkdir", "-p", "/usr/local/etc/"])
+        shell(["rsync", "-rv", f"{etcdir}/", "/usr/local/etc/"])
 
     bindir = os.path.join(Args.directory, "bin")
 
@@ -193,7 +199,8 @@ def main():
     if install:
         exp = re.compile(r"^.i")
         not_installed = [
-            pkg for pkg in sorted(install)
+            pkg
+            for pkg in sorted(install)
             if not exp.search(
                 cmd.run(["dpkg-query", "-W", "-f=${db:Status-Abbrev}", pkg], check=False).stdout
             )
@@ -218,11 +225,6 @@ def main():
     if not os.path.realpath(sys.argv[0]).startswith("/usr/local/bin/"):
         shell(["install", sys.argv[0], "/usr/local/bin/"])
 
-    etcdir = os.path.join(Args.directory, "etc")
-
-    if os.path.exists(etcdir):
-        shell(["mkdir", "-p", "/usr/local/etc/"])
-        shell(["rsync", "-rv", f"{etcdir}/", "/usr/local/etc/"])
 
 if __name__ == "__main__":
     Args = arg.parse(__doc__)
