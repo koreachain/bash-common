@@ -119,17 +119,17 @@ def sync_and_enable(name, action, options, tmpdir):
 
 
 def shell(*args, **kwargs):
+    if kwargs:
+        console.log(*args, kwargs)
+    else:
+        console.log(*args)
+
     if (user := kwargs.get("user")) and user != "root":
         uid = pwd.getpwnam(user).pw_uid
         user_env = os.environ.copy()
         user_env['XDG_RUNTIME_DIR'] = f'/run/user/{uid}'
         user_env['DBUS_SESSION_BUS_ADDRESS'] = f'unix:path=/run/user/{uid}/bus'
         kwargs['env'] = user_env
-
-    if kwargs:
-        console.log(*args, kwargs)
-    else:
-        console.log(*args)
 
     if not Args.dry_run:
         cmd.tty(*args, **kwargs)
