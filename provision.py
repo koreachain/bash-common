@@ -218,6 +218,12 @@ def main():
     if not os.path.realpath(sys.argv[0]).startswith("/usr/local/bin/"):
         shell(["install", sys.argv[0], "/usr/local/bin/"])
 
+    etcdir = os.path.join(Args.directory, "etc")
+
+    if os.path.exists(etcdir):
+        shell(["mkdir", "-p", "/usr/local/etc/"])
+        shell(["rsync", "-rv", f"{etcdir}/", "/usr/local/etc/"])
+
 if __name__ == "__main__":
     Args = arg.parse(__doc__)
 
